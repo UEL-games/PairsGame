@@ -17,30 +17,100 @@ using System.Collections;
 
 public class Card : MonoBehaviour {
 
-	public	Sprite	FrontSprite;	//Sprite to use for the front of the card, assigned in IDE inspector
-	public	Sprite	BackSprite;		//Sprite to use for the back of the card, assigned in IDE inspector
+	private	static	string[] sSuiteName = {
+		"Clubs"			//Text which is the the same sequence as Suits, when using enum cast Suits (uint) this gives a handy Index 
+		,"Diamonds"
+		,"Hearts"
+		,"Spades"
+	};
+
+	private	static string[] sRankName = {
+		"Ace"			//Text which is the the same sequence as Ranks, when using enum cast Ranks (uint) this gives a handy Index 
+		, "Two"
+		, "Three"
+		, "Four"
+		, "Five"
+		, "Six"
+		, "Seven"
+		, "Eight"
+		, "Nine"
+		, "Ten"
+		, "Jack"
+		, "Queen"
+		, "King"
+	};
+
+	public	string	SuitName {
+		get	{
+			return	sSuiteName[Suit];		//Return Suite name, clamp to Array size
+		}
+	}
+
+	public	string	RankName {
+		get	{
+			return	sRankName[Rank];		//Return Rank name, clamp to Array size
+		}
+	}
+
+	public	int	Rank {
+		get	{
+			return	CardID % sRankName.Length;
+		}
+	}
+
+	public	int	Suit {
+		get	{
+			return	(CardID/sRankName.Length) % sSuiteName.Length;
+		}
+	}
+
+	private	Sprite	FrontSprite;	//Sprite to use for the front of the card, now assigned by code so hide it from Inspector
+	private	Sprite	BackSprite;		//Sprite to use for the back of the card,  now assigned by code so hide it from Inspector
 
 	public	bool	ShowCard;		//To Flip the card (show its value) set the ShowCard State true, also works in IDE via inspector
 									//Potential improvement, add a setter method so external code does not need to access Card variables directly
 									//Would also allow for the possibilty to not use update to check card each render, as setter could be used to update 
 									//SR.sprite when it updates the state variable
 
-	SpriteRenderer	SR;				//Copy of reference to SpriteRenderer stored here,for rapid access later 
+	private	SpriteRenderer	SR;				//Copy of reference to SpriteRenderer stored here,for rapid access later 
+	
+	private	int	CardID;			//Unique ID of this card from 0-51 i.e. 4 Suits x 13 Ranks
 
 
-	//Start() Unity calls this before the first Update see https://unity3d.com/learn/tutorials/topics/scripting/awake-and-start
-	void Start () {
+	//Awake() Unity calls this before Start() see https://unity3d.com/learn/tutorials/topics/scripting/awake-and-start
+	void	Awake() {
 		SR = GetComponent<SpriteRenderer> ();	//Grab Copy of sprite renderer component
-		ShowCard=false;			//Show back of card when it starts up
+		CardID=-1;			//This is an invalid CardID, we can use this to spot if Card has not been Intialised in Update
 	}
 
+	public	void	Init(int vCardID,Sprite vFrontSprite, Sprite vBackSprite) {
+		ShowCard=false;					//Show back of card when it starts up
+		CardID=vCardID;					//Remember Card ID, it is used to calcualte Suit & Rank
+		FrontSprite = vFrontSprite;		//Assign Front & Back sprites so card shows
+		BackSprite = vBackSprite;
+		name = ToString ();				//Name it so it shows with name in Hierarchy, handy for debug
+		SetCardSprite();
+	}
 
-	//Update() Unity calls this before every render see see https://unity3d.com/learn/tutorials/topics/scripting/awake-and-start
-	void Update () {
-		if (ShowCard) {		//Check which side of the card to show
+	private	void	SetCardSprite() {		//Moved this to a method as its also used in Init()
+		if (ShowCard) {						//Check which side of the card to show
 			SR.sprite = FrontSprite;		//Show the front, if card does not show in game ensure FrontSprite is set in inspector.
 		} else {
 			SR.sprite = BackSprite;			//Show the back, if card does not show in game ensure BackSprite is set in inspector.
 		}
+	}
+
+	//Update() Unity calls this before every render see see https://unity3d.com/learn/tutorials/topics/scripting/awake-and-start
+	void Update () {
+		if (CardID >= 0) {		//If Card was not initalised this will be -1, handy check as otherwise it simply wont show
+			SetCardSprite();		//Pick correct sprite to show
+		} else {
+			Debug.Log ("Error Card has not been Initalised");
+		}
+	}
+
+
+	public override string ToString ()	{
+		return string.Format ("{0} of {1}", SuitName, RankName);
 	}
 }
